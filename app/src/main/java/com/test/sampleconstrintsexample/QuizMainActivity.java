@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -33,11 +32,12 @@ import java.util.Random;
 
 public class QuizMainActivity extends AppCompatActivity
 {
+    static int currentQue = 0;
+    static int score;
     Button btnNext;
     TextView txtTimer, txtQue;
     CountDownTimer mCountDownTimer;
     ArrayList<QuizQuestions> queList;
-    static int currentQue = 0;
     Animation anim;
     ArrayList<Integer> questionSequence;
     RadioGroup mRadioGroup;
@@ -45,8 +45,52 @@ public class QuizMainActivity extends AppCompatActivity
     ProgressDialog mProgressDialog;
     ProgressBar mProgressBarQuiz;
     TextView txtQno, txtQueTitle;
-    static int score;
     QuizQuestions currentQuestion;
+    private View.OnClickListener onButtonClick = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.btnNext:
+                    mCountDownTimer.cancel();
+                    mProgressDialog.show();
+                    Thread timerThread = new Thread() {
+                        public void run() {
+                            try {
+                                sleep(3000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } finally {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mProgressDialog.hide();
+                                        getNextQuestion();
+                                    }
+                                });
+                            }
+                        }
+                    };
+                    timerThread.start();
+                    break;
+
+                default:
+                    Toast.makeText(getApplicationContext(), ((Button) v).getText().toString(), Toast.LENGTH_SHORT).show();
+
+            }
+        }
+    };
+
+    public static int randInt(int min, int max) {
+
+        // Usually this can be a field rather than a method variable
+        Random rand = new Random();
+
+        // nextInt is normally exclusive of the top value,
+        // so add 1 to make it inclusive
+        int randomNum = rand.nextInt((max - min) + 1) + min;
+
+        return randomNum;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -148,7 +192,6 @@ public class QuizMainActivity extends AppCompatActivity
                 {
                     score++;
                 }
-                Log.d("RES", "onCheckedChanged: " + ans + "[" + score + "]");
             }
         });
     }
@@ -158,45 +201,6 @@ public class QuizMainActivity extends AppCompatActivity
         QuizQuestions.initData();
         queList = QuizQuestions.getQuizQuestionsArrayList();
     }
-
-    private View.OnClickListener onButtonClick = new View.OnClickListener()
-    {
-        @Override
-        public void onClick(View v)
-        {
-            switch (v.getId())
-            {
-                case  R.id.btnNext:
-                    mCountDownTimer.cancel();
-                    mProgressDialog.show();
-                    Thread timerThread = new Thread(){
-                        public void run(){
-                            try{
-                                sleep(3000);
-                            }catch(InterruptedException e){
-                                e.printStackTrace();
-                            }finally{
-                                runOnUiThread(new Runnable()
-                                {
-                                    @Override
-                                    public void run()
-                                    {
-                                        mProgressDialog.hide();
-                                        getNextQuestion();
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    timerThread.start();
-                    break;
-
-                default:
-                    Toast.makeText(getApplicationContext(),((Button)v).getText().toString(),Toast.LENGTH_SHORT).show();
-
-            }
-        }
-    };
 
     private void exitQuiz()
     {
@@ -280,18 +284,6 @@ public class QuizMainActivity extends AppCompatActivity
         anim.setStartOffset(20);
         anim.setRepeatMode(Animation.REVERSE);
         txtTimer.setAnimation(anim);
-    }
-
-    public static int randInt(int min, int max) {
-
-        // Usually this can be a field rather than a method variable
-        Random rand = new Random();
-
-        // nextInt is normally exclusive of the top value,
-        // so add 1 to make it inclusive
-        int randomNum = rand.nextInt((max - min) + 1) + min;
-
-        return randomNum;
     }
 
     public void getUniqueRandomNumbers()
